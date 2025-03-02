@@ -26,8 +26,11 @@ import torch
 from torch import Tensor
 from torch.fft import fft, ifft
 import math
+from torch.utils._pytree import register_pytree_node
 
 from torchhd.tensors.base import VSATensor
+from torchhd.tensors.base import vsatensor_flatten
+from torchhd.tensors.base import vsatensor_unflatten
 
 
 class VTBTensor(VSATensor):
@@ -37,6 +40,9 @@ class VTBTensor(VSATensor):
     """
 
     supported_dtypes: Set[torch.dtype] = {torch.float32, torch.float64}
+
+    def __init__(self, tensor):
+        super().__init__(tensor)
 
     @classmethod
     def empty(
@@ -94,7 +100,8 @@ class VTBTensor(VSATensor):
             device=device,
             requires_grad=requires_grad,
         )
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     @classmethod
     def identity(
@@ -156,7 +163,8 @@ class VTBTensor(VSATensor):
         )
         result[:, 0 :: sqrt_d + 1] = mag
         result.requires_grad = requires_grad
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     @classmethod
     def random(
@@ -213,7 +221,8 @@ class VTBTensor(VSATensor):
         result.div_(result.norm(dim=-1, keepdim=True))
 
         result.requires_grad = requires_grad
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     def bundle(self, other: "VTBTensor") -> "VTBTensor":
         r"""Bundle the hypervector with other using element-wise sum.
@@ -413,3 +422,6 @@ class VTBTensor(VSATensor):
 
         magnitude = torch.clamp(magnitude, min=eps)
         return self.dot_similarity(others) / magnitude
+
+#Register for PyTree (used in TorchDynamo)  
+register_pytree_node(VTBTensor, vsatensor_flatten, vsatensor_unflatten)

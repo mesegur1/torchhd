@@ -25,8 +25,11 @@ import torch
 from torch import Tensor
 import torch.nn.functional as F
 from typing import Set
+from torch.utils._pytree import register_pytree_node
 
 from torchhd.tensors.base import VSATensor
+from torchhd.tensors.base import vsatensor_flatten
+from torchhd.tensors.base import vsatensor_unflatten
 
 
 class BSBCTensor(VSATensor):
@@ -45,6 +48,9 @@ class BSBCTensor(VSATensor):
         torch.int32,
         torch.int64,
     }
+
+    def __init__(self, tensor):
+        super().__init__(tensor)
 
     @classmethod
     def empty(
@@ -101,7 +107,8 @@ class BSBCTensor(VSATensor):
             requires_grad=requires_grad,
         )
 
-        result = result.as_subclass(cls)
+        #result = result.as_subclass(cls)
+        result = cls(result)
         result.block_size = block_size
         return result
 
@@ -154,7 +161,8 @@ class BSBCTensor(VSATensor):
             requires_grad=requires_grad,
         )
 
-        result = result.as_subclass(cls)
+        #result = result.as_subclass(cls)
+        result = cls(result)
         result.block_size = block_size
         return result
 
@@ -215,7 +223,8 @@ class BSBCTensor(VSATensor):
             requires_grad=requires_grad,
         )
 
-        result = result.as_subclass(cls)
+        #result = result.as_subclass(cls)
+        result = cls(result)
         result.block_size = block_size
         return result
 
@@ -375,3 +384,6 @@ class BSBCTensor(VSATensor):
 
         # TODO: handle more return types
         return ret
+
+#Register for PyTree (used in TorchDynamo)  
+register_pytree_node(BSBCTensor, vsatensor_flatten, vsatensor_unflatten)

@@ -26,8 +26,11 @@ import torch
 from torch import Tensor
 from torch.fft import fft, ifft
 import math
+from torch.utils._pytree import register_pytree_node
 
 from torchhd.tensors.base import VSATensor
+from torchhd.tensors.base import vsatensor_flatten
+from torchhd.tensors.base import vsatensor_unflatten
 
 
 class HRRTensor(VSATensor):
@@ -37,6 +40,9 @@ class HRRTensor(VSATensor):
     """
 
     supported_dtypes: Set[torch.dtype] = {torch.float32, torch.float64}
+
+    def __init__(self, tensor):
+        super().__init__(tensor)
 
     @classmethod
     def empty(
@@ -88,7 +94,8 @@ class HRRTensor(VSATensor):
             device=device,
             requires_grad=requires_grad,
         )
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     @classmethod
     def identity(
@@ -140,7 +147,8 @@ class HRRTensor(VSATensor):
         )
         result[:, 0] = 1
         result.requires_grad = requires_grad
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     @classmethod
     def random(
@@ -190,7 +198,8 @@ class HRRTensor(VSATensor):
         result.normal_(0, 1.0 / math.sqrt(dimensions), generator=generator)
 
         result.requires_grad = requires_grad
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     def bundle(self, other: "HRRTensor") -> "HRRTensor":
         r"""Bundle the hypervector with other using element-wise sum.
@@ -383,3 +392,6 @@ class HRRTensor(VSATensor):
 
         magnitude = torch.clamp(magnitude, min=eps)
         return self.dot_similarity(others) / magnitude
+
+#Register for PyTree (used in TorchDynamo)  
+register_pytree_node(HRRTensor, vsatensor_flatten, vsatensor_unflatten)

@@ -160,7 +160,8 @@ class Empty(nn.Embedding):
 
     def forward(self, input: Tensor) -> Tensor:
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
-        return super().forward(input).as_subclass(vsa_tensor)
+        #return super().forward(input).as_subclass(vsa_tensor)
+        return vsa_tensor(super().forward(input))
 
 
 class Identity(nn.Embedding):
@@ -284,7 +285,8 @@ class Identity(nn.Embedding):
 
     def forward(self, input: Tensor) -> Tensor:
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
-        return super().forward(input).as_subclass(vsa_tensor)
+        #return super().forward(input).as_subclass(vsa_tensor)
+        return vsa_tensor(super().forward(input))
 
 
 class Random(nn.Embedding):
@@ -408,7 +410,8 @@ class Random(nn.Embedding):
 
     def forward(self, input: Tensor) -> Tensor:
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
-        return super().forward(input).as_subclass(vsa_tensor)
+        #return super().forward(input).as_subclass(vsa_tensor)
+        return vsa_tensor(super().forward(input))
 
 
 class Level(nn.Embedding):
@@ -539,7 +542,8 @@ class Level(nn.Embedding):
         )
         index = index.clamp(min=0, max=self.num_embeddings - 1)
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
-        return super().forward(index).as_subclass(vsa_tensor)
+        #return super().forward(index).as_subclass(vsa_tensor)
+        return vsa_tensor(super().forward(index))
 
 
 class Thermometer(nn.Embedding):
@@ -659,7 +663,8 @@ class Thermometer(nn.Embedding):
         )
         index = index.clamp(min=0, max=self.num_embeddings - 1)
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
-        return super().forward(index).as_subclass(vsa_tensor)
+        #return super().forward(index).as_subclass(vsa_tensor)
+        return vsa_tensor(super().forward(index))
 
 
 class Flocet(nn.Embedding):
@@ -773,7 +778,8 @@ class Flocet(nn.Embedding):
         )
         index = index.clamp(min=0, max=self.num_embeddings - 1)
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
-        return super().forward(index).as_subclass(vsa_tensor)
+        #return super().forward(index).as_subclass(vsa_tensor)
+        return vsa_tensor(super().forward(index))
 
 
 class Circular(nn.Embedding):
@@ -898,8 +904,9 @@ class Circular(nn.Embedding):
         )
         index = mapped.round().long() % self.num_embeddings
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
-        return super().forward(index).as_subclass(vsa_tensor)
-
+        #return super().forward(index).as_subclass(vsa_tensor)   
+        return vsa_tensor(super().forward(index))
+    
 
 class Projection(nn.Module):
     r"""Embedding using a random projection matrix.
@@ -969,7 +976,8 @@ class Projection(nn.Module):
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
-        return F.linear(input, self.weight).as_subclass(vsa_tensor)
+        #return F.linear(input, self.weight).as_subclass(vsa_tensor)
+        return vsa_tensor(F.linear(input, self.weight))
 
 
 class Sinusoid(nn.Module):
@@ -1048,7 +1056,8 @@ class Sinusoid(nn.Module):
         projected = F.linear(input, self.weight)
         output = torch.cos(projected + self.bias) * torch.sin(projected)
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
-        return output.as_subclass(vsa_tensor)
+        #return output.as_subclass(vsa_tensor)
+        return vsa_tensor(output)
 
 
 class Density(nn.Module):
@@ -1282,14 +1291,16 @@ class FractionalPower(nn.Module):
         # Use the angles in self.weight to obtain the values of the base hypervector(s)
         if self.vsa_tensor == FHRRTensor:
             hvs = torch.complex(self.weight.cos(), self.weight.sin()).T
-            hvs = hvs.as_subclass(FHRRTensor)
+            #hvs = hvs.as_subclass(FHRRTensor)
+            hvs = FHRRTensor(hvs)
 
         elif self.vsa_tensor == HRRTensor:
             complex_hv = torch.complex(self.weight.cos(), self.weight.sin()).T
             hvs = torch.real(
                 torch.fft.ifft(torch.fft.ifftshift(complex_hv, dim=1), dim=1)
             )
-            hvs = hvs.as_subclass(HRRTensor)
+            #hvs = hvs.as_subclass(HRRTensor)
+            hvs = HRRTensor(hvs)
 
         return hvs
 
@@ -1310,13 +1321,15 @@ class FractionalPower(nn.Module):
         if self.vsa_tensor == FHRRTensor:
             phases = F.linear(self.bandwidth * input, self.weight)
             hv = torch.complex(phases.cos(), phases.sin())
-            hv = hv.as_subclass(FHRRTensor)
+            #hv = hv.as_subclass(FHRRTensor)
+            hv = FHRRTensor(hv)
 
         elif self.vsa_tensor == HRRTensor:
             phases = F.linear(self.bandwidth * input, self.weight)
             hv = torch.complex(phases.cos(), phases.sin())
             hv = torch.real(torch.fft.ifft(torch.fft.ifftshift(hv, dim=1), dim=1))
-            hv = hv.as_subclass(HRRTensor)
+            #hv = hv.as_subclass(HRRTensor)
+            hv = HRRTensor(hv)
 
         return hv
 

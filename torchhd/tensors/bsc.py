@@ -25,8 +25,11 @@ import torch
 from typing import Set
 from torch import Tensor
 import torch.nn.functional as F
+from torch.utils._pytree import register_pytree_node
 
 from torchhd.tensors.base import VSATensor
+from torchhd.tensors.base import vsatensor_flatten
+from torchhd.tensors.base import vsatensor_unflatten
 
 
 def biggest_power_two(n):
@@ -55,6 +58,9 @@ class BSCTensor(VSATensor):
         torch.int64,
         torch.bool,
     }
+
+    def __init__(self, tensor):
+        super().__init__(tensor)
 
     @classmethod
     def empty(
@@ -105,7 +111,8 @@ class BSCTensor(VSATensor):
         result = torch.empty(size, dtype=dtype, device=device)
         result.bernoulli_(0.5, generator=generator)
         result.requires_grad = requires_grad
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     @classmethod
     def identity(
@@ -156,7 +163,8 @@ class BSCTensor(VSATensor):
             device=device,
             requires_grad=requires_grad,
         )
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     @classmethod
     def random(
@@ -213,7 +221,8 @@ class BSCTensor(VSATensor):
         result = torch.empty(size, dtype=dtype, device=device)
         result.bernoulli_(1.0 - sparsity, generator=generator)
         result.requires_grad = requires_grad
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     def bundle(
         self, other: "BSCTensor", *, generator: torch.Generator = None
@@ -394,7 +403,8 @@ class BSCTensor(VSATensor):
             tensor([[1, 0, 1, 0, 1, 1, 0, 0, 1, 0]])
 
         """
-        out = torch.empty_like(self).as_subclass(BSCTensor)
+        out = torch.empty_like(self)#.as_subclass(BSCTensor)
+        out = BSCTensor(out)
         return torch.logical_not(self, out=out)
 
     def permute(self, shifts: int = 1) -> "BSCTensor":
@@ -445,3 +455,6 @@ class BSCTensor(VSATensor):
         """Cosine similarity with other hypervectors."""
         d = self.size(-1)
         return self.dot_similarity(others) / d
+
+#Register for PyTree (used in TorchDynamo)  
+register_pytree_node(BSCTensor, vsatensor_flatten, vsatensor_unflatten)

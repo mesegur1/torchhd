@@ -26,8 +26,11 @@ import torch
 from typing import Set
 from torch import Tensor
 import torch.nn.functional as F
+from torch.utils._pytree import register_pytree_node
 
 from torchhd.tensors.base import VSATensor
+from torchhd.tensors.base import vsatensor_flatten
+from torchhd.tensors.base import vsatensor_unflatten
 
 type_conversion = {
     torch.complex64: torch.float32,
@@ -43,7 +46,11 @@ class FHRRTensor(VSATensor):
 
     supported_dtypes: Set[torch.dtype] = {torch.complex64, torch.complex128}
 
+    def __init__(self, tensor):
+        super().__init__(tensor)
+
     @classmethod
+    
     def empty(
         cls,
         num_vectors: int,
@@ -93,9 +100,12 @@ class FHRRTensor(VSATensor):
             device=device,
             requires_grad=requires_grad,
         )
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
+
 
     @classmethod
+    
     def identity(
         cls,
         num_vectors: int,
@@ -146,9 +156,11 @@ class FHRRTensor(VSATensor):
             device=device,
             requires_grad=requires_grad,
         )
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     @classmethod
+    
     def random(
         cls,
         num_vectors: int,
@@ -201,8 +213,10 @@ class FHRRTensor(VSATensor):
 
         result = torch.complex(angle.cos(), angle.sin())
         result.requires_grad = requires_grad
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
+    
     def bundle(self, other: "FHRRTensor") -> "FHRRTensor":
         r"""Bundle the hypervector with other using element-wise sum.
 
@@ -242,10 +256,12 @@ class FHRRTensor(VSATensor):
         """
         return torch.add(self, other)
 
+    
     def multibundle(self) -> "FHRRTensor":
         """Bundle multiple hypervectors"""
         return torch.sum(self, dim=-2, dtype=self.dtype)
 
+    
     def bind(self, other: "FHRRTensor") -> "FHRRTensor":
         r"""Bind the hypervector with other using element-wise multiplication.
 
@@ -285,10 +301,12 @@ class FHRRTensor(VSATensor):
         """
         return torch.mul(self, other)
 
+    
     def multibind(self) -> "FHRRTensor":
         """Bind multiple hypervectors"""
         return torch.prod(self, dim=-2, dtype=self.dtype)
 
+    
     def inverse(self) -> "FHRRTensor":
         r"""Invert the hypervector for binding.
 
@@ -319,6 +337,7 @@ class FHRRTensor(VSATensor):
         # Resolve conj to ensure the the returned tensor does not share the same memory
         return torch.conj(self).resolve_conj()
 
+    
     def negative(self) -> "FHRRTensor":
         r"""Negate the hypervector for the bundling inverse.
 
@@ -344,6 +363,7 @@ class FHRRTensor(VSATensor):
         """
         return torch.negative(self)
 
+    
     def permute(self, shifts: int = 1) -> "FHRRTensor":
         r"""Permute the hypervector.
 
@@ -375,12 +395,14 @@ class FHRRTensor(VSATensor):
         """
         return torch.roll(self, shifts=shifts, dims=-1)
 
+    
     def dot_similarity(self, others: "FHRRTensor") -> Tensor:
         """Inner product with other hypervectors"""
         if others.dim() >= 2:
             others = others.transpose(-2, -1)
         return torch.real(torch.matmul(self, torch.conj(others)))
 
+    
     def cosine_similarity(self, others: "FHRRTensor", *, eps=1e-08) -> Tensor:
         """Cosine similarity with other hypervectors"""
         self_dot = torch.sum(torch.real(self * torch.conj(self)), dim=-1)
@@ -396,3 +418,6 @@ class FHRRTensor(VSATensor):
 
         magnitude = torch.clamp(magnitude, min=eps)
         return self.dot_similarity(others) / magnitude
+
+#Register for PyTree (used in TorchDynamo)  
+register_pytree_node(FHRRTensor, vsatensor_flatten, vsatensor_unflatten)

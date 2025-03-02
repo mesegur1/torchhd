@@ -134,7 +134,15 @@ def ensure_vsa_tensor(
         <class 'torchhd.tensors.map.MAPTensor'>
 
     """
-    input = torch.as_tensor(data, dtype=dtype, device=device)
+    if isinstance(data, VSATensor):
+        input = data
+    else:
+        input = torch.as_tensor(data, dtype=dtype, device=device)
+
+    if dtype is not None and input.dtype != dtype:
+        input = input.to(dtype=dtype)
+    if device is not None and input.device != device:
+        input = input.to(device=device)
 
     if vsa is not None:
         vsa_tensor = get_vsa_tensor_class(vsa)
@@ -143,19 +151,23 @@ def ensure_vsa_tensor(
             options = ", ".join([str(x) for x in vsa_tensor.supported_dtypes])
             raise ValueError(f"{name} vectors must be one of dtype {options}.")
 
-        return input.as_subclass(vsa_tensor)
+        #return input.as_subclass(vsa_tensor)
+        return vsa_tensor(input)
 
     if isinstance(input, VSATensor):
         return input
 
     if input.dtype == torch.bool:
-        return input.as_subclass(BSCTensor)
+        #return input.as_subclass(BSCTensor)
+        return BSCTensor(input)
 
     elif torch.is_complex(input):
-        return input.as_subclass(FHRRTensor)
+        #return input.as_subclass(FHRRTensor)
+        return FHRRTensor(input)
 
     else:
-        return input.as_subclass(MAPTensor)
+        #return input.as_subclass(MAPTensor)
+        return MAPTensor(input)
 
 
 def empty(
@@ -358,7 +370,8 @@ def level(
         dimensions,
         dtype=span_hv.dtype,
         device=span_hv.device,
-    ).as_subclass(vsa_tensor)
+    )#.as_subclass(vsa_tensor)
+    hv = vsa_tensor(hv)
 
     if vsa == "BSBC":
         hv.block_size = span_hv.block_size
@@ -478,7 +491,8 @@ def thermometer(
         hv[i, 0 : i * step] = 1
 
     hv.requires_grad = requires_grad
-    return hv.as_subclass(vsa_tensor)
+    #return hv.as_subclass(vsa_tensor)
+    return vsa_tensor(hv)
 
 
 def flocet(
@@ -563,7 +577,8 @@ def flocet(
         hv[i, i : i + int(dimensions / 2)] = 1
 
     hv.requires_grad = requires_grad
-    return hv.as_subclass(vsa_tensor)
+    #return hv.as_subclass(vsa_tensor)
+    return vsa_tensor(hv)
 
 
 def circular(
@@ -670,7 +685,8 @@ def circular(
         dimensions,
         dtype=span_hv.dtype,
         device=span_hv.device,
-    ).as_subclass(vsa_tensor)
+    )#.as_subclass(vsa_tensor)
+    hv = vsa_tensor(hv)
 
     if vsa == "BSBC":
         hv.block_size = span_hv.block_size

@@ -25,8 +25,11 @@ import torch
 from torch import Tensor
 import torch.nn.functional as F
 from typing import Set
+from torch.utils._pytree import register_pytree_node
 
 from torchhd.tensors.base import VSATensor
+from torchhd.tensors.base import vsatensor_flatten
+from torchhd.tensors.base import vsatensor_unflatten
 
 
 class MAPTensor(VSATensor):
@@ -45,6 +48,9 @@ class MAPTensor(VSATensor):
         torch.int32,
         torch.int64,
     }
+
+    def __init__(self, tensor):
+        super().__init__(tensor)
 
     @classmethod
     def empty(
@@ -91,7 +97,8 @@ class MAPTensor(VSATensor):
             device=device,
             requires_grad=requires_grad,
         )
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     @classmethod
     def identity(
@@ -138,7 +145,8 @@ class MAPTensor(VSATensor):
             device=device,
             requires_grad=requires_grad,
         )
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     @classmethod
     def random(
@@ -189,7 +197,8 @@ class MAPTensor(VSATensor):
 
         result = torch.where(select, -1, +1).to(dtype=dtype, device=device)
         result.requires_grad = requires_grad
-        return result.as_subclass(cls)
+        #return result.as_subclass(cls)
+        return cls(result)
 
     def bundle(self, other: "MAPTensor") -> "MAPTensor":
         r"""Bundle the hypervector with other using element-wise sum.
@@ -364,3 +373,6 @@ class MAPTensor(VSATensor):
 
         magnitude = torch.clamp(magnitude, min=eps)
         return self.dot_similarity(others) / magnitude
+
+#Register for PyTree (used in TorchDynamo)  
+register_pytree_node(MAPTensor, vsatensor_flatten, vsatensor_unflatten)

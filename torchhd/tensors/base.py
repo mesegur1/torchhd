@@ -24,9 +24,10 @@
 from typing import List, Set, Any
 import torch
 from torch import Tensor
+from torch.utils._pytree import register_pytree_node
 
 
-class VSATensor(Tensor):
+class VSATensor:
     """Base class
 
     Each model must implement the methods specified on this base class.
@@ -34,6 +35,24 @@ class VSATensor(Tensor):
 
     supported_dtypes: Set[torch.dtype]
 
+    def __init__(self, tensor):
+        self.tensor = tensor
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({repr(self.tensor)})"
+    
+    @property
+    def dtype(self):
+        return self.tensor.dtype
+
+    @property
+    def shape(self):
+        return self.tensor.shape
+
+    @property
+    def device(self):
+        return self.tensor.device
+    
     @classmethod
     def empty(
         cls,
@@ -77,17 +96,17 @@ class VSATensor(Tensor):
 
     def multibundle(self) -> "VSATensor":
         """Bundle multiple hypervectors"""
-        if self.dim() < 2:
+        if self.tensor.dim() < 2:
             class_name = self.__class__.__name__
             raise RuntimeError(
-                f"{class_name} needs to have at least two dimensions for multibundle, got size: {tuple(self.shape)}"
+                f"{class_name} needs to have at least two dimensions for multibundle, got size: {tuple(self.tensor.shape)}"
             )
 
-        n = self.size(-2)
+        n = self.tensor.size(-2)
         if n == 1:
-            return self.unsqueeze(-2)
+            return self.tensor.unsqueeze(-2)
 
-        tensors: List[VSATensor] = torch.unbind(self, dim=-2)
+        tensors: List[VSATensor] = torch.unbind(self.tensor, dim=-2)
 
         output = tensors[0].bundle(tensors[1])
         for i in range(2, n):
@@ -95,30 +114,31 @@ class VSATensor(Tensor):
 
         return output
 
+
     def bind(self, other: "VSATensor") -> "VSATensor":
         """Bind the hypervector with other"""
         raise NotImplementedError
 
     def multibind(self) -> "VSATensor":
         """Bind multiple hypervectors"""
-        if self.dim() < 2:
+        if self.tensor.dim() < 2:
             class_name = self.__class__.__name__
             raise RuntimeError(
-                f"{class_name} data needs to have at least two dimensions for multibind, got size: {tuple(self.shape)}"
+                f"{class_name} data needs to have at least two dimensions for multibind, got size: {tuple(self.tensor.shape)}"
             )
 
-        n = self.size(-2)
+        n = self.tensor.size(-2)
         if n == 1:
-            return self.unsqueeze(-2)
+            return self.tensor.unsqueeze(-2)
 
-        tensors: List[VSATensor] = torch.unbind(self, dim=-2)
+        tensors: List[VSATensor] = torch.unbind(self.tensor, dim=-2)
 
         output = tensors[0].bind(tensors[1])
         for i in range(2, n):
             output = output.bind(tensors[i])
 
         return output
-
+    
     def inverse(self) -> "VSATensor":
         """Inverse the hypervector for binding"""
         raise NotImplementedError
@@ -138,3 +158,286 @@ class VSATensor(Tensor):
     def cosine_similarity(self, others: "VSATensor") -> Tensor:
         """Cosine similarity with other hypervectors"""
         raise NotImplementedError
+
+    # Proxy pattern for Tensor methods
+    # List of methods to proxy
+    _tensor_methods = [
+        'abs', 'acos', 'asin', 'atan', 'ceil', 'conj', 'cos', 'cosh', 'deg2rad',
+        'digamma', 'exp', 'expm1', 'floor', 'frac', 'imag', 'log', 'log10',
+        'neg', 'real', 'reciprocal', 'relu', 'round', 'sigmoid', 'sin', 'sinh',
+        'sqrt', 'tan', 'tanh', 'to', 'unsqueeze', 'squeeze', 'view', 'reshape',
+        'permute', 'transpose', 'expand', 'contiguous', 'clone', 'detach',
+        'cpu', 'cuda', 'type', 'double', 'float', 'half', 'long', 'int', 'short',
+        'char', 'byte', 'bool', 'bfloat16', 'C', 'contiguous', 'H', 'item',
+        'matmul', 'mean', 'mul', 'pow', 'rsqrt', 'square', 'std', 'sum',
+        # Add more methods as needed
+    ]
+    # Dynamically define methods
+    for method_name in _tensor_methods:
+        def method_factory(method_name):
+            def method(self, *args, **kwargs):
+                result = getattr(self.tensor, method_name)(*args, **kwargs)
+                if isinstance(result, torch.Tensor):
+                    return self.__class__(result)
+                return result
+            return method
+        method = method_factory(method_name)
+        # Use locals() to add the method to the class namespace
+        locals()[method_name] = method
+
+    # Arithmetic Magic Methods
+    def __add__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor + other.tensor
+            return self.__class__(result)
+        else:
+            result = self.tensor + other
+            return self.__class__(result)
+
+    def __radd__(self, other):
+        # Handles cases like scalar + VSATensor
+        result = other + self.tensor
+        return self.__class__(result)
+
+    
+    def __sub__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor - other.tensor
+            return self.__class__(result)
+        else:
+            result = self.tensor - other
+            return self.__class__(result)
+
+    
+    def __rsub__(self, other):
+        # Handles cases like scalar - VSATensor
+        result = other - self.tensor
+        return self.__class__(result)
+
+    
+    def __mul__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor * other.tensor
+            return self.__class__(result)
+        else:
+            result = self.tensor * other
+            return self.__class__(result)
+
+    
+    def __rmul__(self, other):
+        # Handles cases like scalar * VSATensor
+        result = other * self.tensor
+        return self.__class__(result)
+
+    
+    def __truediv__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor / other.tensor
+            return self.__class__(result)
+        else:
+            result = self.tensor / other
+            return self.__class__(result)
+
+    
+    def __rtruediv__(self, other):
+        # Handles cases like scalar / VSATensor
+        result = other / self.tensor
+        return self.__class__(result)
+
+    
+    def __floordiv__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor // other.tensor
+            return self.__class__(result)
+        else:
+            result = self.tensor // other
+            return self.__class__(result)
+
+    
+    def __rfloordiv__(self, other):
+        result = other // self.tensor
+        return self.__class__(result)
+
+    
+    def __mod__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor % other.tensor
+            return self.__class__(result)
+        else:
+            result = self.tensor % other
+            return self.__class__(result)
+
+    
+    def __rmod__(self, other):
+        result = other % self.tensor
+        return self.__class__(result)
+
+    
+    def __pow__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor ** other.tensor
+            return self.__class__(result)
+        else:
+            result = self.tensor ** other
+            return self.__class__(result)
+
+    
+    def __rpow__(self, other):
+        result = other ** self.tensor
+        return self.__class__(result)
+
+    # Unary Operations
+    
+    def __neg__(self):
+        result = -self.tensor
+        return self.__class__(result)
+
+    
+    def __pos__(self):
+        result = +self.tensor
+        return self.__class__(result)
+
+    
+    def __abs__(self):
+        result = abs(self.tensor)
+        return self.__class__(result)
+
+    # Comparison Magic Methods
+    
+    def __eq__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor == other.tensor
+        else:
+            result = self.tensor == other
+        return result
+
+    
+    def __ne__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor != other.tensor
+        else:
+            result = self.tensor != other
+        return result
+
+    
+    def __lt__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor < other.tensor
+        else:
+            result = self.tensor < other
+        return result
+
+    
+    def __le__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor <= other.tensor
+        else:
+            result = self.tensor <= other
+        return result
+
+    
+    def __gt__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor > other.tensor
+        else:
+            result = self.tensor > other
+        return result
+
+    
+    def __ge__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor >= other.tensor
+        else:
+            result = self.tensor >= other
+        return result
+
+    # Matrix Multiplication
+    
+    def __matmul__(self, other):
+        if isinstance(other, VSATensor):
+            result = self.tensor @ other.tensor
+            return self.__class__(result)
+        else:
+            result = self.tensor @ other
+            return self.__class__(result)
+
+    
+    def __rmatmul__(self, other):
+        result = other @ self.tensor
+        return self.__class__(result)
+
+    # In-place Operations
+    
+    def __iadd__(self, other):
+        if isinstance(other, VSATensor):
+            self.tensor += other.tensor
+        else:
+            self.tensor += other
+        return self
+
+    
+    def __isub__(self, other):
+        if isinstance(other, VSATensor):
+            self.tensor -= other.tensor
+        else:
+            self.tensor -= other
+        return self
+
+    
+    def __imul__(self, other):
+        if isinstance(other, VSATensor):
+            self.tensor *= other.tensor
+        else:
+            self.tensor *= other
+        return self
+
+    
+    def __itruediv__(self, other):
+        if isinstance(other, VSATensor):
+            self.tensor /= other.tensor
+        else:
+            self.tensor /= other
+        return self
+
+    
+    def __ifloordiv__(self, other):
+        if isinstance(other, VSATensor):
+            self.tensor //= other.tensor
+        else:
+            self.tensor //= other
+        return self
+
+    
+    def __imod__(self, other):
+        if isinstance(other, VSATensor):
+            self.tensor %= other.tensor
+        else:
+            self.tensor %= other
+        return self
+
+    
+    def __ipow__(self, other):
+        if isinstance(other, VSATensor):
+            self.tensor **= other.tensor
+        else:
+            self.tensor **= other
+        return self
+
+    
+    def __imatmul__(self, other):
+        if isinstance(other, VSATensor):
+            self.tensor @= other.tensor
+        else:
+            self.tensor @= other
+        return self
+
+
+#Register for PyTree (used in TorchDynamo)   
+def vsatensor_flatten(vsa_tensor):
+    # Return tensors and context needed to reconstruct the instance
+    # We use the class of the instance (type) as context to handle subclasses
+    return (vsa_tensor.tensor,), vsa_tensor.__class__
+def vsatensor_unflatten(flattened_tensors, cls):
+    # Reconstruct the instance using the class and the tensor data
+    return cls(flattened_tensors[0])
+register_pytree_node(VSATensor, vsatensor_flatten, vsatensor_unflatten)
