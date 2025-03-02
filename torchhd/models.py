@@ -90,6 +90,7 @@ class Centroid(nn.Module):
         self.count = 0
         self.error_similarity_sum = 0
         self.error_count = 0
+        self.device = device
 
         self.sim = 0
         self.sim_count = 0
@@ -199,7 +200,7 @@ class Centroid(nn.Module):
     def add_adjust(self, input: Tensor, target: Tensor, lr: float = 1.0) -> None:
         logit = self(input)
         predx = torch.topk(logit, 2)
-        pred = torch.tensor([predx.indices[0][0]])
+        pred = torch.tensor([predx.indices[0][0]], device=self.device)
         is_wrong = target != pred
 
         alpha = 1 - (abs(predx[0][0][0]) - abs(predx[0][0][1]))
