@@ -21,13 +21,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-from typing import List, Set, Any
+from typing import List, Set, Any, Sequence
 import torch
 from torch import Tensor
 from torch.utils._pytree import register_pytree_node
 
-
-class VSATensor:
+class VSATensor(object):
     """Base class
 
     Each model must implement the methods specified on this base class.
@@ -52,6 +51,42 @@ class VSATensor:
     @property
     def device(self):
         return self.tensor.device
+    
+    @classmethod
+    def __torch_function__(cls, func, types, args=(), kwargs=None):
+        if kwargs is None:
+            kwargs = {}
+        
+        # Check if any of the types are not torch.Tensor or VSATensor
+        if not all(issubclass(t, (torch.Tensor, VSATensor)) for t in types):
+            return NotImplemented
+        
+        # Unwrap VSATensor instances to their underlying tensors
+        def unwrap(e):
+            if isinstance(e, VSATensor):
+                return e.tensor
+            elif isinstance(e, Sequence):
+                return type(e)(unwrap(x) for x in e)
+            else:
+                return e
+        
+        unwrapped_args = tuple(unwrap(arg) for arg in args)
+        unwrapped_kwargs = {k: unwrap(v) for k, v in kwargs.items()}
+        
+        # Call the original function
+        result = func(*unwrapped_args, **unwrapped_kwargs)
+        
+        # Wrap the result back into VSATensor if it's a tensor
+        def wrap(e):
+            if isinstance(e, torch.Tensor):
+                return cls(e)
+            elif isinstance(e, Sequence):
+                return type(e)(wrap(x) for x in e)
+            else:
+                return e
+        
+        return wrap(result)
+
     
     @classmethod
     def empty(
@@ -163,7 +198,7 @@ class VSATensor:
     # List of methods to proxy
     _tensor_methods = [
         'abs', 'acos', 'asin', 'atan', 'ceil', 'conj', 'cos', 'cosh', 'deg2rad',
-        'digamma', 'exp', 'expm1', 'floor', 'frac', 'imag', 'log', 'log10',
+        'digamma', 'dim', 'exp', 'expm1', 'floor', 'frac', 'imag', 'log', 'log10',
         'neg', 'real', 'reciprocal', 'relu', 'round', 'sigmoid', 'sin', 'sinh',
         'sqrt', 'tan', 'tanh', 'to', 'unsqueeze', 'squeeze', 'view', 'reshape',
         'permute', 'transpose', 'expand', 'contiguous', 'clone', 'detach',
@@ -430,6 +465,40 @@ class VSATensor:
         else:
             self.tensor @= other
         return self
+    
+    # Misc Magic Methods:
+
+    def __len__(self):
+        return len(self.tensor)
+    
+    def __getitem__(self, index):
+        result = self.tensor[index]
+        return self.__class__(result)
+    
+    def __setitem__(self, index, value):
+        if isinstance(value, VSATensor):
+            self.tensor[index] = value.tensor
+        else:
+            self.tensor[index] = value
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def __contains__(self, item):
+        if isinstance(item, VSATensor):
+            return item.tensor in self.tensor
+        else:
+            return item in self.tensor
+
+    def __bool__(self):
+        return self.tensor.bool().item()
+
+    def __int__(self):
+        return int(self.tensor)
+
+    def __float__(self):
+        return float(self.tensor)
 
 
 #Register for PyTree (used in TorchDynamo)   
