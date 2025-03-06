@@ -50,14 +50,13 @@ class MAPTensor(VSATensor):
     }
 
     def __init__(self, tensor):
-        super().__init__(tensor)
+        VSATensor.__init__(self, tensor) #Direct call to base for TorchScript
 
     @classmethod
     def empty(
         cls,
         num_vectors: int,
         dimensions: int,
-        *,
         dtype=None,
         device=None,
         requires_grad=False,
@@ -105,7 +104,6 @@ class MAPTensor(VSATensor):
         cls,
         num_vectors: int,
         dimensions: int,
-        *,
         dtype=None,
         device=None,
         requires_grad=False,
@@ -153,7 +151,6 @@ class MAPTensor(VSATensor):
         cls,
         num_vectors: int,
         dimensions: int,
-        *,
         generator=None,
         dtype=None,
         device=None,
@@ -356,7 +353,7 @@ class MAPTensor(VSATensor):
             others = others.transpose(-2, -1)
         return torch.matmul(self.to(dtype), others.to(dtype))
 
-    def cosine_similarity(self, others: "MAPTensor", *, eps=1e-08) -> Tensor:
+    def cosine_similarity(self, others: "MAPTensor", eps=1e-08) -> Tensor:
         """Cosine similarity with other hypervectors"""
         dtype = torch.get_default_dtype()
 

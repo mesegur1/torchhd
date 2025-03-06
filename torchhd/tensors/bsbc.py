@@ -50,14 +50,13 @@ class BSBCTensor(VSATensor):
     }
 
     def __init__(self, tensor):
-        super().__init__(tensor)
+        VSATensor.__init__(self, tensor) #Direct call to base for TorchScript
 
     @classmethod
     def empty(
         cls,
         num_vectors: int,
         num_blocks: int,
-        *,
         block_size: int,
         generator=None,
         dtype=torch.int64,
@@ -117,7 +116,6 @@ class BSBCTensor(VSATensor):
         cls,
         num_vectors: int,
         num_blocks: int,
-        *,
         block_size: int,
         dtype=torch.int64,
         device=None,
@@ -171,7 +169,6 @@ class BSBCTensor(VSATensor):
         cls,
         num_vectors: int,
         num_blocks: int,
-        *,
         block_size: int,
         generator=None,
         dtype=torch.int64,

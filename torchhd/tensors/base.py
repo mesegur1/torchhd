@@ -52,13 +52,14 @@ class VSATensor(object):
     def device(self):
         return self.tensor.device
     
+    
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
         if kwargs is None:
             kwargs = {}
 
         # Check if any of the types are not torch.Tensor or VSATensor
-        if not all(issubclass(t, (torch.Tensor, VSATensor)) for t in types):
+        if any(not issubclass(t, (torch.Tensor, VSATensor)) for t in types):
             return NotImplemented
 
         def unwrap(e):
@@ -379,7 +380,7 @@ class VSATensor(object):
         return self.__class__(result)
 
     # In-place Operations
-    
+    @torch.jit.unused
     def __iadd__(self, other):
         if isinstance(other, VSATensor):
             self.tensor += other.tensor
@@ -387,7 +388,7 @@ class VSATensor(object):
             self.tensor += other
         return self
 
-    
+    @torch.jit.unused
     def __isub__(self, other):
         if isinstance(other, VSATensor):
             self.tensor -= other.tensor
@@ -395,7 +396,7 @@ class VSATensor(object):
             self.tensor -= other
         return self
 
-    
+    @torch.jit.unused
     def __imul__(self, other):
         if isinstance(other, VSATensor):
             self.tensor *= other.tensor
@@ -403,7 +404,7 @@ class VSATensor(object):
             self.tensor *= other
         return self
 
-    
+    @torch.jit.unused
     def __itruediv__(self, other):
         if isinstance(other, VSATensor):
             self.tensor /= other.tensor
@@ -411,7 +412,7 @@ class VSATensor(object):
             self.tensor /= other
         return self
 
-    
+    @torch.jit.unused
     def __ifloordiv__(self, other):
         if isinstance(other, VSATensor):
             self.tensor //= other.tensor
@@ -419,7 +420,7 @@ class VSATensor(object):
             self.tensor //= other
         return self
 
-    
+    @torch.jit.unused
     def __imod__(self, other):
         if isinstance(other, VSATensor):
             self.tensor %= other.tensor
@@ -427,7 +428,7 @@ class VSATensor(object):
             self.tensor %= other
         return self
 
-    
+    @torch.jit.unused
     def __ipow__(self, other):
         if isinstance(other, VSATensor):
             self.tensor **= other.tensor
@@ -435,7 +436,7 @@ class VSATensor(object):
             self.tensor **= other
         return self
 
-    
+    @torch.jit.unused
     def __imatmul__(self, other):
         if isinstance(other, VSATensor):
             self.tensor @= other.tensor
@@ -472,6 +473,7 @@ class VSATensor(object):
             # Assign scalar values directly
             self.tensor[index] = value
 
+    @torch.jit.unused
     def __iter__(self):
         if self.tensor.dim() == 0:
             raise TypeError("iteration over a 0-d tensor")
@@ -518,10 +520,6 @@ class VSATensor(object):
 
     def view(self, *shape):
         result = self.tensor.view(*shape)
-        return self.__class__(result)
-
-    def permute(self, *dims):
-        result = self.tensor.permute(*dims)
         return self.__class__(result)
 
     def transpose(self, dim0, dim1):

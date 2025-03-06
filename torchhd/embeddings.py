@@ -1191,6 +1191,7 @@ class FractionalPower(nn.Module):
             )
 
         self.vsa_tensor = functional.get_vsa_tensor_class(vsa)
+        self.vsa = vsa
 
         # If a specific dtype is specified make sure it is supported by the VSA model
         if dtype != None and dtype not in self.vsa_tensor.supported_dtypes:
@@ -1228,7 +1229,7 @@ class FractionalPower(nn.Module):
         sample_shape = self.distribution.sample().shape
 
         # Check HD/VSA model type
-        if self.vsa_tensor == FHRRTensor:
+        if self.vsa == "FHRR":
             # Generate the angles for base hypervector(s) that determines the shape of the FPE kernel
             # If the distribution is one-dimensional this implies that base hypervectors are independent so it is safe to generate self.in_features * self.out_features independent samples
             if sample_shape == ():
@@ -1249,7 +1250,7 @@ class FractionalPower(nn.Module):
                     f"The provided distribution has shape {sample_shape} while the input data expects shape () or ({self.in_features},) so there is a mismatch."
                 )
 
-        elif self.vsa_tensor == HRRTensor:
+        elif self.vsa == "HRR":
             # Fewer angles are needed
             dimensions_real = int((self.out_features - 1) / 2)
 
@@ -1289,12 +1290,12 @@ class FractionalPower(nn.Module):
         """Return the values of the base hypervector(s)"""
 
         # Use the angles in self.weight to obtain the values of the base hypervector(s)
-        if self.vsa_tensor == FHRRTensor:
+        if self.vsa == "FHRR":
             hvs = torch.complex(self.weight.cos(), self.weight.sin()).T
             #hvs = hvs.as_subclass(FHRRTensor)
             hvs = FHRRTensor(hvs)
 
-        elif self.vsa_tensor == HRRTensor:
+        elif self.vsa == "HRR":
             complex_hv = torch.complex(self.weight.cos(), self.weight.sin()).T
             hvs = torch.real(
                 torch.fft.ifft(torch.fft.ifftshift(complex_hv, dim=1), dim=1)
@@ -1318,13 +1319,13 @@ class FractionalPower(nn.Module):
 
         # Perform FPE of the desired values using the base hypervector(s)
         # Simultaneously computes angles for given values and their sum that is equivalent to the binding
-        if self.vsa_tensor == FHRRTensor:
+        if self.vsa == "FHRR":
             phases = F.linear(self.bandwidth * input, self.weight)
             hv = torch.complex(phases.cos(), phases.sin())
             #hv = hv.as_subclass(FHRRTensor)
             hv = FHRRTensor(hv)
 
-        elif self.vsa_tensor == HRRTensor:
+        elif self.vsa == "HRR":
             phases = F.linear(self.bandwidth * input, self.weight)
             hv = torch.complex(phases.cos(), phases.sin())
             hv = torch.real(torch.fft.ifft(torch.fft.ifftshift(hv, dim=1), dim=1))

@@ -464,7 +464,7 @@ def thermometer(
         **kwargs,
     )
 
-    if vsa_tensor == BSCTensor:
+    if vsa == "BSC":
         # Use binary vectors
         hv = torch.zeros(
             num_vectors,
@@ -472,7 +472,7 @@ def thermometer(
             dtype=rand_hv.dtype,
             device=rand_hv.device,
         )
-    elif (vsa_tensor == MAPTensor) | (vsa_tensor == FHRRTensor):
+    elif (vsa == "MAP") | (vsa == "FHRR"):
         # Use bipolar vectors
         hv = torch.full(
             (
@@ -550,7 +550,7 @@ def flocet(
         **kwargs,
     )
 
-    if vsa_tensor == BSCTensor:
+    if vsa == "BSC":
         # Use binary vectors
         hv = torch.zeros(
             num_vectors,
@@ -558,7 +558,7 @@ def flocet(
             dtype=rand_hv.dtype,
             device=rand_hv.device,
         )
-    elif (vsa_tensor == MAPTensor) | (vsa_tensor == FHRRTensor):
+    elif (vsa == "MAP") | (vsa == "FHRR"):
         # Use bipolar vectors
         hv = torch.full(
             (
@@ -653,7 +653,7 @@ def circular(
     """
     vsa_tensor = get_vsa_tensor_class(vsa)
 
-    if vsa == "HRR" or vsa == "VTB":
+    if (vsa == "HRR") or (vsa == "VTB"):
         raise ValueError(
             "The circular hypervectors do currently not work with the HRR and VTB models. We are not sure why, if you have any insight that could help please share it at: https://github.com/hyperdimensional-computing/torchhd/issues/108."
         )
@@ -1878,6 +1878,7 @@ class FractionalPowerEncoding:
         self.bandwidth = bandwidth
         self.requires_grad = requires_grad
         self.vsa_tensor = get_vsa_tensor_class(vsa)
+        self.vsa = vsa #For TorchScript compatibility
 
         super().__init__()
 
@@ -1893,7 +1894,7 @@ class FractionalPowerEncoding:
         )
 
         # Check HD/VSA model type
-        if self.vsa_tensor == FHRRTensor:
+        if self.vsa == "FHRR":
             # Generate the base vector that determines the shape of the FPE kernel
             if self.kernel_shape == "sinc":
                 # Define the corresppnding distribution
@@ -1962,7 +1963,7 @@ class FractionalPowerEncoding:
             # In case the input is one-dimensional, add an extra singleton dimension
             values = torch.unsqueeze(values, 1)
 
-        if self.vsa_tensor == FHRRTensor:
+        if self.vsa == "FHRR":
             # Perform FPE of the desired values using the base hypervector(s)
             # Simultaneously computes angles for given values and their sum that is equivalent to the binding
             hv_angles = torch.matmul(

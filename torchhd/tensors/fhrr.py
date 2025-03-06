@@ -47,7 +47,7 @@ class FHRRTensor(VSATensor):
     supported_dtypes: Set[torch.dtype] = {torch.complex64, torch.complex128}
 
     def __init__(self, tensor):
-        super().__init__(tensor)
+        VSATensor.__init__(self, tensor) #Direct call to base for TorchScript
 
     @classmethod
     
@@ -55,7 +55,6 @@ class FHRRTensor(VSATensor):
         cls,
         num_vectors: int,
         dimensions: int,
-        *,
         dtype=torch.complex64,
         device=None,
         requires_grad=False,
@@ -110,7 +109,6 @@ class FHRRTensor(VSATensor):
         cls,
         num_vectors: int,
         dimensions: int,
-        *,
         dtype=torch.complex64,
         device=None,
         requires_grad=False,
@@ -165,7 +163,6 @@ class FHRRTensor(VSATensor):
         cls,
         num_vectors: int,
         dimensions: int,
-        *,
         dtype=torch.complex64,
         device=None,
         requires_grad=False,
@@ -403,7 +400,7 @@ class FHRRTensor(VSATensor):
         return torch.real(torch.matmul(self, torch.conj(others)))
 
     
-    def cosine_similarity(self, others: "FHRRTensor", *, eps=1e-08) -> Tensor:
+    def cosine_similarity(self, others: "FHRRTensor", eps=1e-08) -> Tensor:
         """Cosine similarity with other hypervectors"""
         self_dot = torch.sum(torch.real(self * torch.conj(self)), dim=-1)
         self_mag = torch.sqrt(self_dot)

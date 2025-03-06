@@ -42,14 +42,13 @@ class VTBTensor(VSATensor):
     supported_dtypes: Set[torch.dtype] = {torch.float32, torch.float64}
 
     def __init__(self, tensor):
-        super().__init__(tensor)
+        VSATensor.__init__(self, tensor) #Direct call to base for TorchScript
 
     @classmethod
     def empty(
         cls,
         num_vectors: int,
         dimensions: int,
-        *,
         dtype=None,
         device=None,
         requires_grad=False,
@@ -108,7 +107,6 @@ class VTBTensor(VSATensor):
         cls,
         num_vectors: int,
         dimensions: int,
-        *,
         dtype=None,
         device=None,
         requires_grad=False,
@@ -171,7 +169,6 @@ class VTBTensor(VSATensor):
         cls,
         num_vectors: int,
         dimensions: int,
-        *,
         generator=None,
         dtype=None,
         device=None,
@@ -407,7 +404,7 @@ class VTBTensor(VSATensor):
 
         return torch.matmul(self, others)
 
-    def cosine_similarity(self, others: "VTBTensor", *, eps=1e-08) -> Tensor:
+    def cosine_similarity(self, others: "VTBTensor", eps=1e-08) -> Tensor:
         """Cosine similarity with other hypervectors"""
         self_dot = torch.sum(self * self, dim=-1)
         self_mag = torch.sqrt(self_dot)
