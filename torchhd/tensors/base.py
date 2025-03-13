@@ -34,7 +34,7 @@ class VSATensor(object):
 
     supported_dtypes: Set[torch.dtype]
 
-    def __init__(self, tensor):
+    def __init__(self, tensor : torch.Tensor):
         self.tensor = tensor
 
     def __repr__(self):
@@ -602,6 +602,11 @@ class VSATensor(object):
     def sin(self):
         result = torch.sin(self.tensor)
         return self.__class__(result)
+    
+    def requires_grad_(self, mode : bool):
+        result = self.tensor.requires_grad_(mode)
+        return self.__class__(result)
+        
 
 #Register for PyTree (used in TorchDynamo)   
 def vsatensor_flatten(vsa_tensor):

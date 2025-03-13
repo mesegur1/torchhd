@@ -141,7 +141,7 @@ class Empty(nn.Embedding):
         )
         # Have to provide requires grad at the creation of the parameters to
         # prevent errors when instantiating a non-float embedding
-        self.weight = Parameter(embeddings, requires_grad=requires_grad)
+        self.weight = Parameter(embeddings.tensor, requires_grad=requires_grad)
 
         # we don't need to set the padding to empty because it is already empty.
 
@@ -254,7 +254,7 @@ class Identity(nn.Embedding):
         )
         # Have to provide requires grad at the creation of the parameters to
         # prevent errors when instantiating a non-float embedding
-        self.weight = Parameter(embeddings, requires_grad=requires_grad)
+        self.weight = Parameter(embeddings.tensor, requires_grad=requires_grad)
 
         self._fill_padding_idx_with_empty()
 
@@ -379,7 +379,7 @@ class Random(nn.Embedding):
         )
         # Have to provide requires grad at the creation of the parameters to
         # prevent errors when instantiating a non-float embedding
-        self.weight = Parameter(embeddings, requires_grad=requires_grad)
+        self.weight = Parameter(embeddings.tensor, requires_grad=requires_grad)
 
         self._fill_padding_idx_with_empty()
 
@@ -520,7 +520,7 @@ class Level(nn.Embedding):
         )
         # Have to provide requires grad at the creation of the parameters to
         # prevent errors when instantiating a non-float embedding
-        self.weight = Parameter(embeddings, requires_grad=requires_grad)
+        self.weight = Parameter(embeddings.tensor, requires_grad=requires_grad)
 
     def reset_parameters(self) -> None:
         factory_kwargs = {"device": self.weight.device, "dtype": self.weight.dtype}
@@ -642,7 +642,7 @@ class Thermometer(nn.Embedding):
         )
         # Have to provide requires grad at the creation of the parameters to
         # prevent errors when instantiating a non-float embedding
-        self.weight = Parameter(embeddings, requires_grad=requires_grad)
+        self.weight = Parameter(embeddings.tensor, requires_grad=requires_grad)
 
     def reset_parameters(self) -> None:
         factory_kwargs = {"device": self.weight.device, "dtype": self.weight.dtype}
@@ -761,7 +761,7 @@ class Flocet(nn.Embedding):
         )
         # Have to provide requires grad at the creation of the parameters to
         # prevent errors when instantiating a non-float embedding
-        self.weight = Parameter(embeddings, requires_grad=requires_grad)
+        self.weight = Parameter(embeddings.tensor, requires_grad=requires_grad)
 
     def reset_parameters(self) -> None:
         factory_kwargs = {"device": self.weight.device, "dtype": self.weight.dtype}
@@ -882,7 +882,7 @@ class Circular(nn.Embedding):
         )
         # Have to provide requires grad at the creation of the parameters to
         # prevent errors when instantiating a non-float embedding
-        self.weight = Parameter(embeddings, requires_grad=requires_grad)
+        self.weight = Parameter(embeddings.tensor, requires_grad=requires_grad)
 
     def reset_parameters(self) -> None:
         factory_kwargs = {"device": self.weight.device, "dtype": self.weight.dtype}
