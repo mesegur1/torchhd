@@ -156,7 +156,7 @@ class Empty(nn.Embedding):
                 **factory_kwargs,
                 **self.vsa_kwargs,
             )
-            self.weight.copy_(embeddings)
+            self.weight.copy_(embeddings.tensor)
 
     def forward(self, input: Tensor) -> Tensor:
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
@@ -269,7 +269,7 @@ class Identity(nn.Embedding):
                 **factory_kwargs,
                 **self.vsa_kwargs,
             )
-            self.weight.copy_(embeddings)
+            self.weight.copy_(embeddings.tensor)
 
         self._fill_padding_idx_with_empty()
 
@@ -394,7 +394,7 @@ class Random(nn.Embedding):
                 **factory_kwargs,
                 **self.vsa_kwargs,
             )
-            self.weight.copy_(embeddings)
+            self.weight.copy_(embeddings.tensor)
 
         self._fill_padding_idx_with_empty()
 
@@ -406,7 +406,7 @@ class Random(nn.Embedding):
                 empty = functional.empty(
                     1, self.embedding_dim, self.vsa, **factory_kwargs, **self.vsa_kwargs
                 )
-                self.weight[self.padding_idx].copy_(empty.squeeze(0))
+                self.weight[self.padding_idx].copy_(empty.tensor.squeeze(0))
 
     def forward(self, input: Tensor) -> Tensor:
         vsa_tensor = functional.get_vsa_tensor_class(self.vsa)
@@ -534,7 +534,7 @@ class Level(nn.Embedding):
                 **factory_kwargs,
                 **self.vsa_kwargs,
             )
-            self.weight.copy_(embeddings)
+            self.weight.copy_(embeddings.tensor)
 
     def forward(self, input: Tensor) -> Tensor:
         index = functional.value_to_index(
@@ -655,7 +655,7 @@ class Thermometer(nn.Embedding):
                 **factory_kwargs,
                 **self.vsa_kwargs,
             )
-            self.weight.copy_(embeddings)
+            self.weight.copy_(embeddings.tensor)
 
     def forward(self, input: Tensor) -> Tensor:
         index = functional.value_to_index(
@@ -770,7 +770,7 @@ class Flocet(nn.Embedding):
             embeddings = functional.flocet(
                 self.num_embeddings, self.embedding_dim, self.vsa, **factory_kwargs
             )
-            self.weight.copy_(embeddings)
+            self.weight.copy_(embeddings.tensor)
 
     def forward(self, input: Tensor) -> Tensor:
         index = functional.value_to_index(
@@ -896,7 +896,7 @@ class Circular(nn.Embedding):
                 **factory_kwargs,
                 **self.vsa_kwargs,
             )
-            self.weight.copy_(embeddings)
+            self.weight.copy_(embeddings.tensor)
 
     def forward(self, input: Tensor) -> Tensor:
         mapped = functional.map_range(
