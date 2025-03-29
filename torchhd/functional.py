@@ -990,12 +990,7 @@ def hard_quantize(input: Tensor):
         tensor([ 1., -1., -1., -1.,  1., -1.])
 
     """
-    # Make sure that the output tensor has the same dtype and device
-    # as the input tensor.
-    positive = torch.tensor(1.0, dtype=input.dtype, device=input.device)
-    negative = torch.tensor(-1.0, dtype=input.dtype, device=input.device)
-
-    return torch.where(input > 0, positive, negative)
+    return torch.where(input > 0, 1, -1)
 
 
 def dot_similarity(input: VSATensor, others: VSATensor) -> VSATensor:
