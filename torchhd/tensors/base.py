@@ -383,67 +383,51 @@ class VSATensor(object):
     @torch.jit.unused
     def __iadd__(self, other):
         if isinstance(other, VSATensor):
-            self.tensor += other.tensor
+            self.tensor.__iadd__(other.tensor)
         else:
-            self.tensor += other
+            self.tensor.__iadd__(other)
         return self
 
     @torch.jit.unused
     def __isub__(self, other):
         if isinstance(other, VSATensor):
-            self.tensor -= other.tensor
+            self.tensor.__isub__(other.tensor)
         else:
-            self.tensor -= other
+            self.tensor.__isub__(other)
         return self
 
     @torch.jit.unused
     def __imul__(self, other):
         if isinstance(other, VSATensor):
-            self.tensor *= other.tensor
+            self.tensor.__imul__(other.tensor)
         else:
-            self.tensor *= other
+            self.tensor.__imul__(other)
         return self
 
     @torch.jit.unused
     def __itruediv__(self, other):
         if isinstance(other, VSATensor):
-            self.tensor /= other.tensor
+            self.tensor.__itruediv__(other.tensor)
         else:
-            self.tensor /= other
+            self.tensor.__itruediv__(other)
         return self
 
     @torch.jit.unused
     def __ifloordiv__(self, other):
         if isinstance(other, VSATensor):
-            self.tensor //= other.tensor
+            self.tensor.__ifloordiv__(other.tensor)
         else:
-            self.tensor //= other
+            self.tensor.__ifloordiv__(other)
         return self
 
     @torch.jit.unused
     def __imod__(self, other):
         if isinstance(other, VSATensor):
-            self.tensor %= other.tensor
+            self.tensor.__imod__(other.tensor)
         else:
-            self.tensor %= other
+            self.tensor.__imod__(other)
         return self
 
-    @torch.jit.unused
-    def __ipow__(self, other):
-        if isinstance(other, VSATensor):
-            self.tensor **= other.tensor
-        else:
-            self.tensor **= other
-        return self
-
-    @torch.jit.unused
-    def __imatmul__(self, other):
-        if isinstance(other, VSATensor):
-            self.tensor @= other.tensor
-        else:
-            self.tensor @= other
-        return self
-    
     # Misc Magic Methods:
 
     def __len__(self):
